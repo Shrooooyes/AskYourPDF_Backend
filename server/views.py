@@ -8,7 +8,7 @@ import random
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import json
-
+from bson import json_util
 
 import pymongo
 import sys
@@ -17,6 +17,10 @@ password = '430mCNBIXAhaVGE6'
 uri = f"mongodb+srv://shreyashsawant37:{password}@cluster0.ojuq0lp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 
+client = pymongo.MongoClient(uri)
+db = client.USERS
+my_collection = db["Users"]
+
 @csrf_exempt
 def addUser(request):
     if request.method == 'POST':
@@ -24,17 +28,10 @@ def addUser(request):
         data = json.loads(body_unicode)
         print(data)
         
-        try:
-            client = pymongo.MongoClient(uri)
-        
-        except pymongo.errors.ConfigurationError:
-            print("An Invalid URI host error was received. Is your Atlas host name correct in your connection string?")
-
-        db = client.USERS
-        my_collection = db["Users"]
         user_documents = [data]
         
-        my_doc = my_collection.find_one({"email": data["email"]})
+        my_doc = my_collection.find_one({"email": data["email"]},{'firstName': 1, 'lastName': 1, 'email': 1, 'password': 1, 'confirmPassword': 1, 'disability': 1})
+
 
         if my_doc is not None:
             print("Already user exists cant add new user")
@@ -51,8 +48,8 @@ def addUser(request):
 
         print("\n")
         
-        
-        return JsonResponse({'error': False}, status=200)
+        data = json.loads(json_util.dumps(data))
+        return JsonResponse(data, status=200)
     
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
@@ -64,22 +61,19 @@ def login(request):
         data = json.loads(body_unicode)
         print(data)
         
-        try:
-            client = pymongo.MongoClient(uri)
-        
-        except pymongo.errors.ConfigurationError:
-            print("An Invalid URI host error was received. Is your Atlas host name correct in your connection string?")
-
-        db = client.USERS
-        my_collection = db["Users"]
         user_documents = [data]
         
-        my_doc = my_collection.find_one({"email": data["email"]})
-        if my_doc is  None:
+        my_doc = my_collection.find_one({"email": data["email"]},{'firstName': 1, 'lastName': 1, 'email': 1, 'password': 1, 'confirmPassword': 1, 'disability': 1})
+        if my_doc is None:
             print("No such user exists\n")
-            return JsonResponse({'error': 'No such user exists'}, status=200)
+            return JsonResponse({'error': 'No such user exists'}, status=400)
         
-        print(my_doc['password'],data['password'])
+        if(my_doc['password']==data['password']):
+            my_doc = json.loads(json_util.dumps(my_doc))
+            print(my_doc)
+            return JsonResponse(my_doc, status=200)
+        else:
+            return JsonResponse({'error': 'Incorrect Password'}, status=400)
         
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
