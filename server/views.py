@@ -23,14 +23,19 @@ my_collection = db["Users"]
 
 @csrf_exempt
 def addUser(request):
-    if request.method == 'POST':
+    if request.method == 'POST': 
         body_unicode = request.body.decode('utf-8')
         data = json.loads(body_unicode)
         print(data)
         
-        user_documents = [data]
+        chat = {"id" : 0, "chats": []}
+        data = {
+            'user' : data,
+            'chat' : chat
+        }
         
-        my_doc = my_collection.find_one({"email": data["email"]},{'firstName': 1, 'lastName': 1, 'email': 1, 'password': 1, 'confirmPassword': 1, 'disability': 1})
+        user_documents = [data]
+        my_doc = my_collection.find_one({"user.email": data['user']["email"]})
 
 
         if my_doc is not None:
@@ -63,12 +68,12 @@ def login(request):
         
         user_documents = [data]
         
-        my_doc = my_collection.find_one({"email": data["email"]},{'firstName': 1, 'lastName': 1, 'email': 1, 'password': 1, 'confirmPassword': 1, 'disability': 1})
+        my_doc = my_collection.find_one({"user.email": data["email"]})
         if my_doc is None:
             print("No such user exists\n")
             return JsonResponse({'error': 'No such user exists'}, status=400)
         
-        if(my_doc['password']==data['password']):
+        if(my_doc['user']['password']==data['password']):
             my_doc = json.loads(json_util.dumps(my_doc))
             print(my_doc)
             return JsonResponse(my_doc, status=200)
@@ -77,15 +82,7 @@ def login(request):
         
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
-
-@csrf_exempt
-def pdfUpload(request):
-    if request.method == 'POST':
-        data = request.FILES['file'] 
-        print(data)
-        return JsonResponse({'error': False}, status=200)
     
-    return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 def testSEE(request):
     def event_stream():
@@ -101,3 +98,39 @@ def testSEE(request):
                 yield 'data: finished\n\n'
             
     return StreamingHttpResponse(event_stream(),content_type = 'text/event-stream')
+
+@csrf_exempt
+def updateChat(request):
+    if request.method == 'POST':
+        # body_unicode = request.body.decode('utf-8')
+        # data = json.loads(body_unicode)
+        # print(data)
+        print(request)
+        return JsonResponse({'error' : "NULL"}, status=200)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+#Can be used
+@csrf_exempt
+def getUser(request):
+    if request.method == 'POST':
+        body_unicode = request.body.decode('utf-8')
+        data = json.loads(body_unicode)
+        print(data)
+        my_doc = my_collection.find_one({"email": data["email"]})
+        
+        my_doc = json.loads(json_util.dumps(my_doc))
+        print(my_doc)
+        return JsonResponse(my_doc, status=200)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=400)
+    
+@csrf_exempt
+def pdfUpload(request):
+    if request.method == 'POST':
+        data = request.FILES['file'] 
+        print(data)
+        return JsonResponse({'error': False}, status=200)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
