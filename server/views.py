@@ -16,7 +16,7 @@ import sys
 password = '430mCNBIXAhaVGE6'
 uri = f"mongodb+srv://shreyashsawant37:{password}@cluster0.ojuq0lp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
-uri = "mongodb://0.0.0.0:27017/"
+# uri = "mongodb://0.0.0.0:27017/"
 
 client = pymongo.MongoClient(uri)
 db = client.USERS
@@ -64,12 +64,16 @@ def login(request):
     if request.method == 'POST':
         body_unicode = request.body.decode('utf-8')
         data = json.loads(body_unicode)
+        
         print(data)
         
         my_doc = None
-        if data['email'] == '':
-            my_doc = my_collection.find_one({"user.email": data["email"]})
+        my_doc = my_collection.find_one({"user.email": data["email"]})
+        print("doc: ")
+        print(my_doc)
         if my_doc is None:
+            print("doc: ")
+            print(my_doc)
             print("No such user exists\n")
             return JsonResponse({'error': 'No such user exists'}, status=400)
         
@@ -93,14 +97,19 @@ def updateChat(request):
         is_user = None    
         if data['email'] != '':
             is_user = my_collection.find_one({"user.email": data["email"]})
+            
         if is_user:
             user_chats = is_user['chat']
             print(f"user_chats: {len(user_chats)}, myChats: {len(data['chat'])}")
             
             if (len(user_chats)-1) >= data['id']:
-                user_chats[int(data['id'])] = data['chat']
+                user_chats[int(data['id'])]['chats'] = data['chat']
+                # print(user_chats[int(data['id'])]['chats'])
             else :
-                user_chats.append(data['chat'])
+                user_chats.append({
+                    "id" : int(data['id']),
+                    "chats" : data['chat']
+                    })
 
             query = {"user.email": data["email"]}
             new_chat = {"$set" : {"chat" : user_chats}}
